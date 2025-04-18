@@ -14,14 +14,18 @@ document.addEventListener("click", async () => {
     await Tone.start();
     let data = window.data;
     displayGraph(data);
-    playWithTone(data);
+    playWithTone();
     console.log("audio is ready");
 });
+
+const noteDurationList = [0.25, 0.5, 1, 2, 4, 8, 16, 32, 64];
 
 function playWithTone() {
     let index = 0;
     const synth = new Tone.MonoSynth().toDestination();
 
+    // Clear previous schedules and stop the transport
+    Tone.Transport.stop();
     Tone.Transport.cancel(); // clear previous schedules
 
     Tone.Transport.scheduleRepeat((time) => {
@@ -31,10 +35,16 @@ function playWithTone() {
         }
 
         const price = upcoming[index];
+        const high = upcomingHigh[index] - minPrice;
+        const durationIndex = Math.floor(Math.log(high)) % noteDurationList.length;
+        const noteDuration = noteDurationList[durationIndex];
+        console.log(high, durationIndex, noteDuration);
+
         if (price) {
             let normalizedPrice = price - minPrice;
             const freq = 100 + normalizedPrice;
-            synth.triggerAttackRelease(freq, "8n", time);
+            const duration = noteDuration + "n";
+            synth.triggerAttackRelease(freq, duration , time);
         }
 
         // update chart
@@ -48,11 +58,12 @@ function playWithTone() {
     Tone.Transport.start();
 }
 
-let chart, played = [], upcoming = [], labels = [], minPrice, maxPrice;
+let chart, played = [], upcoming = [], upcomingHigh = [], labels = [], minPrice, maxPrice;
 
 function displayGraph(data) {
     labels = data.map(r => r.Date).reverse();
     upcoming = data.map(r => parseFloat(r.Price.replace(",", ""))).reverse();
+    upcomingHigh = data.map(r => parseFloat(r.High.replace(",", ""))).reverse();
     played = new Array(upcoming.length).fill(null);
 
     minPrice = Math.min(...upcoming);
