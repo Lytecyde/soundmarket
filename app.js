@@ -1,10 +1,13 @@
+let prices = [], chart, played = [], minPrice = null, maxPrice = 0;
+
 // Using pure JS, after page has loaded, load the data from the JSON file
 document.addEventListener("DOMContentLoaded", function() {
     // Fetch the JSON data
     fetch('https://raw.githubusercontent.com/tanel/soundmarket/refs/heads/main/msci_emerging_markets_converted.json')
         .then(response => response.json())
         .then(data => {
-            window.data = data;
+            prices = parseData(data);
+            played = new Array(prices.length).fill(null);
         })
         .catch(error => console.error('Error fetching data:', error));
 });
@@ -12,8 +15,7 @@ document.addEventListener("DOMContentLoaded", function() {
 //attach a click listener to a play button
 document.addEventListener("click", async () => {
     await Tone.start();
-    let data = window.data;
-    displayGraph(data);
+    displayGraph();
     playWithTone();
     console.log("audio is ready");
 });
@@ -29,27 +31,27 @@ function playWithTone() {
     Tone.Transport.cancel(); // clear previous schedules
 
     Tone.Transport.scheduleRepeat((time) => {
-        if (index >= upcoming.length) {
+        if (index >= prices.length) {
             Tone.Transport.stop();
             return;
         }
 
-        const price = upcoming[index];
-        const high = upcomingHigh[index] - minPrice;
+        let price = prices[index];
+
+        const high = price.High - minPrice;
         const durationIndex = Math.floor(Math.log(high)) % noteDurationList.length;
         const noteDuration = noteDurationList[durationIndex];
-        console.log(high, durationIndex, noteDuration);
 
         if (price) {
-            let normalizedPrice = price - minPrice;
+            let normalizedPrice = price.Price - minPrice;
             const freq = 100 + normalizedPrice;
             const duration = noteDuration + "n";
+            console.log(freq, duration, time);
             synth.triggerAttackRelease(freq, duration , time);
         }
 
         // update chart
-        played[index] = price;
-        upcoming[index] = null;
+        played[index] = price.Price;
         chart.update();
 
         index++;
@@ -58,23 +60,42 @@ function playWithTone() {
     Tone.Transport.start();
 }
 
-let chart, played = [], upcoming = [], upcomingHigh = [], labels = [], minPrice, maxPrice;
+function parseNumeric(value) {
+    return parseFloat(value.replace(",", ""))
+}
 
-function displayGraph(data) {
-    labels = data.map(r => r.Date).reverse();
-    upcoming = data.map(r => parseFloat(r.Price.replace(",", ""))).reverse();
-    upcomingHigh = data.map(r => parseFloat(r.High.replace(",", ""))).reverse();
-    played = new Array(upcoming.length).fill(null);
+function parseData(data) {
+    return data.reverse().map(x => {
+        const price = {
+            Date: x.Date,
+            Price: parseNumeric(x.Price),
+            High: parseNumeric(x.High),
+            Open: parseNumeric(x.Open),
+            Low: parseNumeric(x.Low),
+        };
 
-    minPrice = Math.min(...upcoming);
-    maxPrice = Math.max(...upcoming);
+        if (!minPrice) {
+            minPrice = price.Price;
+        } else {
+            minPrice = Math.min(minPrice, price.Price);
+        }
 
+        maxPrice = Math.max(maxPrice, price.Price);
+
+        return price;
+    });
+}
+
+function displayGraph() {
     const ctx = document.getElementById("chart").getContext("2d");
+
+    console.log("minPrice", minPrice);
+    console.log("maxPrice", maxPrice);
 
     chart = new Chart(ctx, {
         type: "line",
         data: {
-            labels,
+            labels: prices.map(x => { return x.Date; }),
             datasets: [
                 {
                     label: "Played",
@@ -85,7 +106,7 @@ function displayGraph(data) {
                 },
                 {
                     label: "Upcoming",
-                    data: upcoming,
+                    data: prices.map(x => { return x.Price; }),
                     borderColor: "gray",
                     borderWidth: 2,
                     tension: 0.2
