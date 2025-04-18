@@ -18,43 +18,9 @@ document.addEventListener("click", async () => {
     console.log("audio is ready");
 });
 
-// Assume `data` is the JSON array
-function modulateSynthFromData(data) {
-    const now = Tone.now();
-    data.forEach((row, i) => {
-        const price = parseFloat(row.Price.replace(",", "")) || 400;
-        const change = parseFloat(row["Change %"].replace("%", "")) || 0;
-
-        // Map price to pitch range (e.g. 200–1000 Hz)
-        const freq = 200 + (price % 800);
-        const duration = "8n";
-
-        // Modulate filter envelope base frequency by % change
-        synth.set({
-            filterEnvelope: {
-                baseFrequency: 200 + Math.abs(change) * 100
-            }
-        });
-
-        synth.triggerAttackRelease(freq, duration, now + i * 0.3);
-    });
-}
-
 function playWithTone() {
     let index = 0;
-    const synth = new Tone.MonoSynth({
-        oscillator: { type: "square" },
-        filter: { Q: 2, type: "lowpass", rolloff: -24 },
-        envelope: { attack: 0.05, decay: 0.3, sustain: 0.4, release: 1 },
-        filterEnvelope: {
-            attack: 0.001,
-            decay: 0.1,
-            sustain: 0.5,
-            release: 0.8,
-            baseFrequency: 200,
-            octaves: 2.6,
-        }
-    }).toDestination();
+    const synth = new Tone.MonoSynth().toDestination();
 
     Tone.Transport.cancel(); // clear previous schedules
 
@@ -66,7 +32,8 @@ function playWithTone() {
 
         const price = upcoming[index];
         if (price) {
-            const freq = 200 + (price % 800);
+            let normalizedPrice = price - minPrice;
+            const freq = 100 + normalizedPrice;
             synth.triggerAttackRelease(freq, "8n", time);
         }
 
@@ -81,12 +48,15 @@ function playWithTone() {
     Tone.Transport.start();
 }
 
-let chart, played = [], upcoming = [], labels = [];
+let chart, played = [], upcoming = [], labels = [], minPrice, maxPrice;
 
 function displayGraph(data) {
     labels = data.map(r => r.Date).reverse();
     upcoming = data.map(r => parseFloat(r.Price.replace(",", ""))).reverse();
     played = new Array(upcoming.length).fill(null);
+
+    minPrice = Math.min(...upcoming);
+    maxPrice = Math.max(...upcoming);
 
     const ctx = document.getElementById("chart").getContext("2d");
 
