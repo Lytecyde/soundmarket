@@ -49,7 +49,7 @@ function playWithTone() {
         filterEnvelope: {
             attack: 0.001,
             decay: 0.1,
-            sustain: 0.2,
+            sustain: 0.5,
             release: 0.8,
             baseFrequency: 200,
             octaves: 2.6,
@@ -64,13 +64,14 @@ function playWithTone() {
             return;
         }
 
-        const freq = upcoming[index];
-        if (freq) {
+        const price = upcoming[index];
+        if (price) {
+            const freq = 200 + (price % 800);
             synth.triggerAttackRelease(freq, "8n", time);
         }
 
         // update chart
-        played[index] = freq;
+        played[index] = price;
         upcoming[index] = null;
         chart.update();
 
