@@ -4,8 +4,7 @@ document.addEventListener("DOMContentLoaded", function() {
     fetch('https://raw.githubusercontent.com/tanel/soundmarket/refs/heads/main/msci_emerging_markets_converted.json')
         .then(response => response.json())
         .then(data => {
-            // Call the function to display the data
-            startMusic(data);
+            window.data = data;
         })
         .catch(error => console.error('Error fetching data:', error));
 });
@@ -13,33 +12,16 @@ document.addEventListener("DOMContentLoaded", function() {
 //attach a click listener to a play button
 document.addEventListener("click", async () => {
     await Tone.start();
+    let data = window.data;
+    displayGraph(data);
+    playWithTone(data);
     console.log("audio is ready");
 });
 
-function startMusic(data) {
-    console.log('Starting sound market...');
-    modulateSynthFromData(data);
-}
-
 // Assume `data` is the JSON array
 function modulateSynthFromData(data) {
-    const synth = new Tone.MonoSynth({
-        oscillator: { type: "square" },
-        filter: { Q: 2, type: "lowpass", rolloff: -24 },
-        envelope: { attack: 0.05, decay: 0.3, sustain: 0.4, release: 1 },
-        filterEnvelope: {
-            attack: 0.001,
-            decay: 0.1,
-            sustain: 0.2,
-            release: 0.8,
-            baseFrequency: 200,
-            octaves: 2.6,
-        }
-    }).toDestination();
-
     const now = Tone.now();
-
-    data.slice(0, 16).forEach((row, i) => {
+    data.forEach((row, i) => {
         const price = parseFloat(row.Price.replace(",", "")) || 400;
         const change = parseFloat(row["Change %"].replace("%", "")) || 0;
 
@@ -55,5 +37,86 @@ function modulateSynthFromData(data) {
         });
 
         synth.triggerAttackRelease(freq, duration, now + i * 0.3);
+    });
+}
+
+function playWithTone() {
+    let index = 0;
+    const synth = new Tone.MonoSynth({
+        oscillator: { type: "square" },
+        filter: { Q: 2, type: "lowpass", rolloff: -24 },
+        envelope: { attack: 0.05, decay: 0.3, sustain: 0.4, release: 1 },
+        filterEnvelope: {
+            attack: 0.001,
+            decay: 0.1,
+            sustain: 0.2,
+            release: 0.8,
+            baseFrequency: 200,
+            octaves: 2.6,
+        }
+    }).toDestination();
+
+    Tone.Transport.cancel(); // clear previous schedules
+
+    Tone.Transport.scheduleRepeat((time) => {
+        if (index >= upcoming.length) {
+            Tone.Transport.stop();
+            return;
+        }
+
+        const freq = upcoming[index];
+        if (freq) {
+            synth.triggerAttackRelease(freq, "8n", time);
+        }
+
+        // update chart
+        played[index] = freq;
+        upcoming[index] = null;
+        chart.update();
+
+        index++;
+    }, "8n");
+
+    Tone.Transport.start();
+}
+
+let chart, played = [], upcoming = [], labels = [];
+
+function displayGraph(data) {
+    labels = data.map(r => r.Date).reverse();
+    upcoming = data.map(r => parseFloat(r.Price.replace(",", ""))).reverse();
+    played = new Array(upcoming.length).fill(null);
+
+    const ctx = document.getElementById("chart").getContext("2d");
+
+    chart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: "Played",
+                    data: played,
+                    borderColor: "red",
+                    borderWidth: 2,
+                    tension: 0.2
+                },
+                {
+                    label: "Upcoming",
+                    data: upcoming,
+                    borderColor: "gray",
+                    borderWidth: 2,
+                    tension: 0.2
+                }
+            ]
+        },
+        options: {
+            animation: false,
+            responsive: true,
+            scales: {
+                x: { title: { display: true, text: "Date" } },
+                y: { title: { display: true, text: "Price" } }
+            }
+        }
     });
 }
