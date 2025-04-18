@@ -22,7 +22,7 @@ const noteDurationList = [0.25, 0.5, 1, 2, 4, 8, 16, 32, 64];
 
 function playWithTone() {
     let index = 0;
-    const synth = new Tone.MonoSynth().toDestination();
+    const synth = new Tone.PolySynth(Tone.Synth).toDestination();
 
     // Clear previous schedules and stop the transport
     Tone.Transport.stop();
