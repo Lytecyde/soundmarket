@@ -17,96 +17,45 @@ document.addEventListener("click", async () => {
     console.log("audio is ready");
 });
 
-const noteDurationList = [0.25, 0.5, 1, 2, 4, 8, 16, 32, 64];
-
-function newSynth() {
-    return new Tone.DuoSynth({
-        harmonicity: 1.5,
-        voice0: {
-            oscillator: { type: "sawtooth" },
-            filterEnvelope: {
-                attack: 0.01,
-                decay: 0.3,
-                sustain: 0.5,
-                release: 0.8
-            }
-        },
-        voice1: {
-            oscillator: { type: "square" },
-            filterEnvelope: {
-                attack: 0.02,
-                decay: 0.25,
-                sustain: 0.4,
-                release: 0.7
-            }
-        }
-    });
-}
-
 function playWithTone() {
     Tone.Transport.stop();
     Tone.Transport.cancel();
 
-    const filter = new Tone.Filter(500, "lowpass");
-    const synth = newSynth().connect(filter);
-    const reverb = new Tone.Reverb({ decay: 2, wet: 0.2 }).connect(Tone.Destination);
-    filter.connect(reverb);
+    const synth = new Tone.Synth({
+        oscillator: { type: "sine" },
+        envelope: {
+            attack: 0.6,
+            decay: 0.4,
+            sustain: 0.8,
+            release: 1.5
+        }
+    }).toDestination();
 
-    const events = prices.map((price, index) => {
-        const stepTime = `${index * 0.5}`;
-        return [stepTime, { index, price }];
-    });
+    let index = 0;
 
-    const part = new Tone.Part((time, event) => {
-        modulateRandom({
-            synth,
-            filter,
-            reverb,
-            price: event.price,
-            time: time,
-        });
+    const loop = new Tone.Loop((time) => {
+        if (index >= prices.length) {
+            Tone.Transport.stop();
+            loop.dispose();
+            return;
+        }
 
-        played[event.index] = event.price.Price;
+        const price = prices[index];
+        const freq = 100 + (price.Price - minPrice);
+
+        synth.triggerAttackRelease(freq, "2n", time);
+
+        played[index] = price.Price;
         chart.update();
-    }, events);
 
-    part.start(0);
+        index++;
+    }, "2n"); // every half note
+
+    loop.start(0);
+    Tone.Transport.bpm.value = 120;
     Tone.Transport.start();
 }
- 
-function modulateRandom(state) {
-    const price = state.price;
-    const change = price.Change;
-    const high = price.High - minPrice;
-    const safeLog = Math.max(0, Math.log(high || 1));
-    const durationIndex = Math.floor(safeLog) % noteDurationList.length;
-    const noteDuration = noteDurationList[durationIndex];
 
-    if (price) {
-        const normalizedPrice = price.Price - minPrice;
-        const freq = Math.min(1000, Math.max(100, 100 + normalizedPrice));
-        const duration = noteDuration + "n";
-
-        const synth = state.synth;
-
-        // 🎲 Controlled randomness
-        const chaos = Math.random();
-        const volatility = Math.abs(change);
-
-        // NOTE: DuoSynth uses `.frequency` and `.harmonicity` at creation
-        // We can only adjust `.frequency` dynamically
-        synth.frequency.value = freq;
-
-        const filter = state.filter;
-        filter.frequency.value = 300 + chaos * 400 + volatility * 5;
-
-        const reverb = state.reverb;
-        reverb.wet.value = Math.min(1, volatility / 10 + chaos * 0.1);
-
-        const time = state.time;
-        synth.triggerAttackRelease(duration, time);
-    }
-}
 
 function parseNumeric(value) {
     return parseFloat(value.replace(",", ""));
