@@ -17,46 +17,6 @@ document.addEventListener("click", async () => {
     console.log("audio is ready");
 });
 
-function playWithTone() {
-    Tone.Transport.stop();
-    Tone.Transport.cancel();
-
-    const synth = new Tone.Synth({
-        oscillator: { type: "sine" },
-        envelope: {
-            attack: 0.6,
-            decay: 0.4,
-            sustain: 0.8,
-            release: 1.5
-        }
-    }).toDestination();
-
-    let index = 0;
-
-    const loop = new Tone.Loop((time) => {
-        if (index >= prices.length) {
-            Tone.Transport.stop();
-            loop.dispose();
-            return;
-        }
-
-        const price = prices[index];
-        const freq = 100 + (price.Price - minPrice);
-
-        synth.triggerAttackRelease(freq, "2n", time);
-
-        played[index] = price.Price;
-        chart.update();
-
-        index++;
-    }, "2n"); // every half note
-
-    loop.start(0);
-    Tone.Transport.bpm.value = 120;
-    Tone.Transport.start();
-}
-
-
 function parseNumeric(value) {
     return parseFloat(value.replace(",", ""));
 }
@@ -120,4 +80,88 @@ function displayGraph() {
             }
         }
     });
+}
+
+function quantizeToScale(midi, scale = [2, 3, 6, 7, 9, 10, 1]) {
+    const octave = Math.floor(midi / 12);
+    const noteInOctave = midi % 12;
+    const closest = scale.reduce((prev, curr) =>
+        Math.abs(curr - noteInOctave) < Math.abs(prev - noteInOctave) ? curr : prev
+    );
+    return octave * 12 + closest;
+}
+
+function playWithTone() {
+    Tone.Transport.stop();
+    Tone.Transport.cancel();
+
+    const synth = new Tone.PolySynth(Tone.AMSynth, {
+        maxPolyphony: 4,
+        volume: -8,
+        options: {
+            harmonicity: 1.25,
+            modulationIndex: 1.5,
+            envelope: {
+                attack: 1.2,
+                decay: 0.5,
+                sustain: 0.9,
+                release: 3
+            },
+            modulationEnvelope: {
+                attack: 0.8,
+                decay: 0.4,
+                sustain: 0.7,
+                release: 2.5
+            },
+            oscillator: { type: "sine" },
+            modulation: { type: "sine" }
+        }
+    });
+
+    const filter = new Tone.Filter({
+        frequency: 1000,
+        Q: 0.5,
+        type: "lowpass"
+    });
+
+    const reverb = new Tone.Reverb({ decay: 6, wet: 0.5 }).toDestination();
+
+    synth.connect(filter);
+    filter.connect(reverb);
+
+    // Gentle LFO on filter to simulate bow pressure variation
+    const filterLFO = new Tone.LFO({
+        frequency: 0.1,
+        min: 700,
+        max: 1400
+    }).start();
+    filterLFO.connect(filter.frequency);
+
+    let index = 0;
+
+    const loop = new Tone.Loop((time) => {
+        if (index >= prices.length) {
+            Tone.Transport.stop();
+            loop.dispose();
+            return;
+        }
+
+        const price = prices[index];
+
+        // Hungarian Minor scale
+        const rawMidi = 40 + (price.Price - minPrice) * 0.3;
+        const quantizedMidi = quantizeToScale(Math.round(rawMidi), [2, 3, 6, 7, 9, 10, 1]);
+        const freq = Tone.Frequency(quantizedMidi, "midi").toFrequency();
+
+        synth.triggerAttackRelease(freq, "2n", time);
+
+        played[index] = price.Price;
+        chart.update();
+
+        index++;
+    }, "4n");
+
+    loop.start(0);
+    Tone.Transport.bpm.value = 120;
+    Tone.Transport.start();
 }
