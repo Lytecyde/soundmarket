@@ -78,36 +78,6 @@ function playWithTone() {
     Tone.Transport.start();
 }
 
-function modulate(state) {
-    const price = state.price;
-    const change = price.Change;
-    const high = price.High - minPrice;
-    const safeLog = Math.max(0, Math.log(high || 1));
-    const durationIndex = Math.floor(safeLog) % noteDurationList.length;
-    const noteDuration = noteDurationList[durationIndex];
-
-    if (price) {
-        const normalizedPrice = price.Price - minPrice;
-        const freq = Math.min(1000, Math.max(100, 100 + normalizedPrice));
-        const duration = noteDuration + "n";
-
-        // 🎚 Modulations
-        const synth = state.synth;
-        synth.frequency.value = freq;
-        synth.modulationIndex.value = 20 + Math.abs(change) * 2;
-        synth.harmonicity.value = 2 + Math.abs(change) / 10;
-
-        const filter = state.filter;
-        filter.frequency.value = 300 + Math.abs(change) * 20;
-
-        const reverb = state.reverb;
-        reverb.wet.value = Math.min(1, Math.abs(change) / 10);
-
-        const time = state.time;
-        synth.triggerAttackRelease(duration, time);
-    }
-}
-
 function modulateRandom(state) {
     const price = state.price;
     const change = price.Change;
