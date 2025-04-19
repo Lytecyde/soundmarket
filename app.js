@@ -44,40 +44,36 @@ function newSynth() {
 }
 
 function playWithTone() {
-    const filter = new Tone.Filter(500, "lowpass");
-    const synth = newSynth().connect(filter);
-
-    const reverb = new Tone.Reverb({ decay: 2, wet: 0.2 }).connect(Tone.Destination);
-    filter.connect(reverb);
-
     Tone.Transport.stop();
     Tone.Transport.cancel();
 
-    let index = 0;
-    Tone.Transport.scheduleRepeat((time) => {
-        if (index >= prices.length) {
-            Tone.Transport.stop();
-            return;
-        }
+    const filter = new Tone.Filter(500, "lowpass");
+    const synth = newSynth().connect(filter);
+    const reverb = new Tone.Reverb({ decay: 2, wet: 0.2 }).connect(Tone.Destination);
+    filter.connect(reverb);
 
-        const price = prices[index];
+    const events = prices.map((price, index) => {
+        const stepTime = `${index * 0.5}`;
+        return [stepTime, { index, price }];
+    });
 
+    const part = new Tone.Part((time, event) => {
         modulateRandom({
-            synth: synth,
-            filter: filter,
-            reverb: reverb,
-            price: price,
+            synth,
+            filter,
+            reverb,
+            price: event.price,
             time: time,
         });
 
-        played[index] = price.Price;
+        played[event.index] = event.price.Price;
         chart.update();
-        index++;
-    }, "8n");
+    }, events);
 
+    part.start(0);
     Tone.Transport.start();
 }
-
+ 
 function modulateRandom(state) {
     const price = state.price;
     const change = price.Change;
