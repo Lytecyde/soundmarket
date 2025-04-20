@@ -102,7 +102,7 @@ function playWithTone() {
             harmonicity: 1.25,
             modulationIndex: 1.5,
             envelope: {
-                attack: 1.2,
+                attack: 0.1,
                 decay: 0.5,
                 sustain: 0.9,
                 release: 3
@@ -148,20 +148,72 @@ function playWithTone() {
 
         const price = prices[index];
 
-        // Hungarian Minor scale
-        const rawMidi = 40 + (price.Price - minPrice) * 0.3;
-        const quantizedMidi = quantizeToScale(Math.round(rawMidi), [2, 3, 6, 7, 9, 10, 1]);
-        const freq = Tone.Frequency(quantizedMidi, "midi").toFrequency();
+        const chordChange = sentimentChordChange(index);
 
-        synth.triggerAttackRelease(freq, "2n", time);
+        synth.triggerAttackRelease(chordChange[0], "8n", time); //first chord of chord change
+        synth.triggerAttackRelease(chordChange[1], "8n", time + 1/3 ); // 2nd chord of chord change
+        synth.triggerAttackRelease(chordChange[2], "8n", time + 2/3 ); // 3rd chord of chord change
 
         played[index] = price.Price;
         chart.update();
 
         index++;
-    }, "4n");
+    }, "2n");
 
     loop.start(0);
-    Tone.Transport.bpm.value = 120;
+    Tone.Transport.bpm.value = 60;
     Tone.Transport.start();
+}
+
+function sentiment(index) {
+    if (index === 0) {
+        return "gray"; // Return directly for first element
+    }
+
+    const change = prices[index].Change;
+    const lastChange = prices[index - 1].Change;
+    const trendGrowing = prices[index].Price > prices[index - 1].Price;
+
+    let sentimentType = "neutral"; // Default sentiment
+
+    if (change > 0 && lastChange > 0 && trendGrowing) {
+        sentimentType = "Pleasant High Energy"; // Happy
+    } else if (change < 0 && lastChange < 0 && !trendGrowing) {
+        sentimentType = "Unpleasant Low Energy"; // Calm
+    } else if (change < 0 && lastChange < 0 && trendGrowing) {
+        sentimentType = "Unpleasant High Energy"; // Angry
+    } else if (change > 0 && lastChange > 0 && !trendGrowing) {
+        sentimentType = "Pleasant Low Energy"; // Sad
+    }
+
+    const sentimentColors = {
+        "Pleasant High Energy": "yellow",
+        "Pleasant Low Energy": "green",
+        "Unpleasant High Energy": "red",
+        "Unpleasant Low Energy": "blue",
+        "neutral": "gray"
+    };
+
+    return sentimentColors[sentimentType];
+}
+
+function sentimentChordChange(index) {
+    let songSoFar = [];
+    const s = sentiment(index);
+
+    // Musical sentiment definitions
+    const musicalSentiments = {
+        "yellow": [["F4","A4","C4"], ["G4","B#4","D4"], ["A5","C4","E4"]], // Happy
+        "green": [["G4","B4","D4"], ["D5","F#5","A5"], ["E5","G5","B5"]], // Calm
+        "blue": [["E4","G4","B4"], ["C4","E4","G4"], ["A5","C5","E5"]], // Sad
+        "red": [["C4","E4","G4"], ["E4","G4","B5"], ["G4","B5","D5"]], // Angry
+        "gray": [["E4","G4","B4"], ["G4","B5","D4"], ["C5","E5","G4"]] // Neutral
+    };
+
+    songSoFar.push(s);
+
+    // Select the first chord based on sentiment color
+    let chordOf3Notes = musicalSentiments[s]?.[0] || ["C", "E", "G"];
+    let chordChange = musicalSentiments[s];
+    return chordChange;
 }
