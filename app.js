@@ -150,8 +150,6 @@ function playWithTone() {
 
         const chordChange = sentimentChordChange(index);
 
-        console.log(chordChange);
-
         synth.triggerAttackRelease(chordChange[0], "8n", time); //first chord of chord change
         synth.triggerAttackRelease(chordChange[1], "8n", time + 1/3 ); // 2nd chord of chord change
         synth.triggerAttackRelease(chordChange[2], "8n", time + 2/3 ); // 3rd chord of chord change
@@ -163,77 +161,59 @@ function playWithTone() {
     }, "2n");
 
     loop.start(0);
-    Tone.Transport.bpm.value = 60;// comment 
+    Tone.Transport.bpm.value = 60;
     Tone.Transport.start();
 }
 
-const SentimentHappy = "happy";
-const SentimentSad = "sad";
-const SentimentAngry = "angry";
-const SentimentCalm = "calm";
-const SentimentNeutral = "neutral";
-
-const sentimentColors = {
-    SentimentHappy: "Pleasant High Energy",
-    SentimentCalm: "Pleasant Low Energy",
-    SentimentAngry: "Unpleasant High Energy",
-    SentimentBlue: "Unpleasant Low Energy",
-    SentimentNeutral: "neutral",
-};
-
 function sentiment(index) {
     if (index === 0) {
-        return SentimentNeutral; // Return directly for first element
+        return "gray"; // Return directly for first element
     }
 
-    let price = prices[index].Price;
-    let lastPrice = prices[index - 1].Price;
+    const change = prices[index].Change;
+    const lastChange = prices[index - 1].Change;
+    const trendGrowing = prices[index].Price > prices[index - 1].Price;
 
-    const change = price.Change;
-    const lastChange = lastPrice.Change;
-    const trendGrowing = price.Price > lastPrice.Price;
+    let sentimentType = "neutral"; // Default sentiment
 
     if (change > 0 && lastChange > 0 && trendGrowing) {
-        return SentimentHappy;
+        sentimentType = "Pleasant High Energy"; // Happy
     } else if (change < 0 && lastChange < 0 && !trendGrowing) {
-        return SentimentCalm;
+        sentimentType = "Unpleasant Low Energy"; // Calm
     } else if (change < 0 && lastChange < 0 && trendGrowing) {
-        return SentimentAngry;
+        sentimentType = "Unpleasant High Energy"; // Angry
     } else if (change > 0 && lastChange > 0 && !trendGrowing) {
-        return SentimentSad;
+        sentimentType = "Pleasant Low Energy"; // Sad
     }
 
-    return SentimentNeutral;
+    const sentimentColors = {
+        "Pleasant High Energy": "yellow",
+        "Pleasant Low Energy": "green",
+        "Unpleasant High Energy": "red",
+        "Unpleasant Low Energy": "blue",
+        "neutral": "gray"
+    };
+
+    return sentimentColors[sentimentType];
 }
-
-// Musical sentiment definitions
-function musicalSentiment(sentimentName) {
-    switch (sentimentName) {
-        case SentimentHappy:
-            return [["F4", "A4", "C4"], ["G4", "B#4", "D4"], ["A5", "C4", "E4"]];
-        case SentimentCalm:
-            return [["G4", "B4", "D4"], ["D5", "F#5", "A5"], ["E5", "G5", "B5"]];
-        case SentimentSad:
-            return [["E4", "G4", "B4"], ["C4", "E4", "G4"], ["A5", "C5", "E5"]];
-        case SentimentAngry:
-            return [["C4", "E4", "G4"], ["E4", "G4", "B5"], ["G4", "B5", "D5"]];
-        case SentimentNeutral:
-            return [["E4", "G4", "B4"], ["G4", "B5", "D4"], ["C5", "E5", "G4"]];
-    }
-};
 
 function sentimentChordChange(index) {
     let songSoFar = [];
-    const sentimentName = sentiment(index);
+    const s = sentiment(index);
 
-    console.log("s", sentimentName);
+    // Musical sentiment definitions
+    const musicalSentiments = {
+        "yellow": [["F4","A4","C4"], ["G4","B#4","D4"], ["A5","C4","E4"]], // Happy
+        "green": [["G4","B4","D4"], ["D5","F#5","A5"], ["E5","G5","B5"]], // Calm
+        "blue": [["E4","G4","B4"], ["C4","E4","G4"], ["A5","C5","E5"]], // Sad
+        "red": [["C4","E4","G4"], ["E4","G4","B5"], ["G4","B5","D5"]], // Angry
+        "gray": [["E4","G4","B4"], ["G4","B5","D4"], ["C5","E5","G4"]] // Neutral
+    };
 
-    songSoFar.push(sentimentName);
+    songSoFar.push(s);
 
     // Select the first chord based on sentiment color
-    let chordChange = musicalSentiment(sentimentName);
-
-    console.log("chordChange", chordChange);
-
+    let chordOf3Notes = musicalSentiments[s]?.[0] || ["C", "E", "G"];
+    let chordChange = musicalSentiments[s];
     return chordChange;
 }
