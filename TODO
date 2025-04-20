@@ -1,4 +1,7 @@
 - Display prices as a graph
+- Display prices as a hao staff pianotation, a piano roll
 - Chords
+    - n note chords for 2nds, 3rds, and 4ths
+- Chord Change tuples
+- Sentiment arrays for chords and strings that describe their sentiment characterisation
 - Translators (volume => velocity etc)
-- Sentiment
