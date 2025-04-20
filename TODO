@@ -5,3 +5,13 @@
 - Chord Change tuples
 - Sentiment arrays for chords and strings that describe their sentiment characterisation
 - Translators (volume => velocity etc)
+    - volume to velocity
+    - day difference to humanisation
+    - banking holidays to pauses
+    - price to note frequency (max - min price + 220)
+    - price - historic price growth to note freq
+    - high to duration
+    - market change sentiment (depressing, sad, neutral, happy, ecstatic valence )
+     to emotional musical sentiment
+    - market changes and volumes converted into energetics vectors data to tempo
+    - market news into sentiments analysis to emoji to musical sentiment
