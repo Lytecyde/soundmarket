@@ -67,34 +67,12 @@
    /* box-shadow: 0 0 0 3px var(--btn-focus-shadow); */
 }
 
-
 .btn-primary:active {
   color: var(--btn-primary-text);
   background-color: var(--btn-primary-bg-active);
   border-color: var(--btn-primary-bg-active);
   transform: scale(0.98); /* Subtle press effect */
   box-shadow: none; /* Remove focus shadow during press */
-}
-
-/* Secondary / Outline Button Styles */
-.btn-secondary {
-  color: var(--btn-secondary-text);
-  border-color: var(--btn-secondary-border);
-  background-color: transparent;
-}
-
-.btn-secondary:hover {
-  color: var(--btn-secondary-text-hover);
-  background-color: var(--btn-secondary-bg-hover);
-  border-color: var(--btn-secondary-border); /* Keep border color */
-}
-
-.btn-secondary:active {
-  color: var(--btn-secondary-text-hover);
-  background-color: #e2e6ea; /* Slightly darker background for active state */
-  border-color: var(--btn-secondary-border);
-  transform: scale(0.98);
-  box-shadow: none;
 }
 
 /* Disabled State */
@@ -111,8 +89,3 @@
     border-radius: 50em; /* Large value for pill shape */
 }
 
-/* Example: Larger button */
-.btn-lg {
-    padding: calc(var(--btn-padding-y) * 1.2) calc(var(--btn-padding-x) * 1.2);
-    font-size: 1.15rem;
-}
