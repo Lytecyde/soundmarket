@@ -17,6 +17,8 @@ document.addEventListener("click", async () => {
     console.log("audio is ready");
 });
 
+
+
 function parseNumeric(value) {
     return parseFloat(value.replace(",", ""));
 }
@@ -202,7 +204,7 @@ function sentimentChordChange(index) {
 
     // Musical sentiment definitions
     const musicalSentiments = {
-        "yellow": [["F4","A4","C4"], ["G4","B#4","D4"]], // Happy
+        "yellow": [["F4","A4","C4"], ["G4","B4","D4"]], // Happy
         "green": [["G4","B4","D4"], ["F4","A4","C4"]], // Calm
         "blue": [["E4","G4","B4"], ["A4","C4","E4"]], // Sad
         "red": [["C4","E4","G4"], ["E4","G4","B4"]], // Angry
@@ -214,4 +216,8 @@ function sentimentChordChange(index) {
     // Select the first chord based on sentiment color
     let chordChange = musicalSentiments[s];
     return chordChange;
+}
+
+function testSongs (sentiment){
+
 }
