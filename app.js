@@ -148,9 +148,11 @@ function playWithTone() {
 
         const price = prices[index];
 
-        const chord = sentimentChordChange(index);
+        const chordChange = sentimentChordChange(index);
 
-        synth.triggerAttackRelease(chord, "2n",time);
+        synth.triggerAttackRelease(chordChange[0], "4n",time);
+        synth.triggerAttackRelease(chordChange[1], "4n", time + 0.25);
+        synth.triggerAttackRelease(chordChange[2], "4n", time + 0.75);
         played[index] = price.Price;
         chart.update();
 
@@ -211,6 +213,6 @@ function sentimentChordChange(index) {
 
     // Select the first chord based on sentiment color
     let chordOf3Notes = musicalSentiments[s]?.[0] || ["C", "E", "G"];
-
-    return chordOf3Notes;
+    let chordChange = musicalSentiments[s];
+    return chordChange;
 }
