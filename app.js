@@ -102,7 +102,7 @@ function playWithTone() {
             harmonicity: 1.25,
             modulationIndex: 1.5,
             envelope: {
-                attack: 1.2,
+                attack: 0.1,
                 decay: 0.5,
                 sustain: 0.9,
                 release: 3
@@ -150,17 +150,18 @@ function playWithTone() {
 
         const chordChange = sentimentChordChange(index);
 
-        synth.triggerAttackRelease(chordChange[0], "4n",time);
-        synth.triggerAttackRelease(chordChange[1], "4n", time + 0.25);
-        synth.triggerAttackRelease(chordChange[2], "4n", time + 0.75);
+        synth.triggerAttackRelease(chordChange[0], "8n", time); //first chord of chord change
+        synth.triggerAttackRelease(chordChange[1], "8n", time + 1/3 ); // 2nd chord of chord change
+        synth.triggerAttackRelease(chordChange[2], "8n", time + 2/3 ); // 3rd chord of chord change
+
         played[index] = price.Price;
         chart.update();
 
         index++;
-    }, "4n");
+    }, "2n");
 
     loop.start(0);
-    Tone.Transport.bpm.value = 120;
+    Tone.Transport.bpm.value = 60;
     Tone.Transport.start();
 }
 
