@@ -150,15 +150,14 @@ function playWithTone() {
 
         const chordChange = sentimentChordChange(index);
 
-        synth.triggerAttackRelease(chordChange[0], "8n", time); //first chord of chord change
-        synth.triggerAttackRelease(chordChange[1], "8n", time + 1/3 ); // 2nd chord of chord change
-        synth.triggerAttackRelease(chordChange[2], "8n", time + 2/3 ); // 3rd chord of chord change
+        synth.triggerAttackRelease(chordChange[0], "32n", time); //first chord of chord change
+        synth.triggerAttackRelease(chordChange[1], "32n", time + 1/2 ); // 2nd chord of chord change
 
         played[index] = price.Price;
         chart.update();
 
         index++;
-    }, "2n");
+    }, "4n");
 
     loop.start(0);
     Tone.Transport.bpm.value = 60;
@@ -203,17 +202,16 @@ function sentimentChordChange(index) {
 
     // Musical sentiment definitions
     const musicalSentiments = {
-        "yellow": [["F4","A4","C4"], ["G4","B#4","D4"], ["A5","C4","E4"]], // Happy
-        "green": [["G4","B4","D4"], ["D5","F#5","A5"], ["E5","G5","B5"]], // Calm
-        "blue": [["E4","G4","B4"], ["C4","E4","G4"], ["A5","C5","E5"]], // Sad
-        "red": [["C4","E4","G4"], ["E4","G4","B5"], ["G4","B5","D5"]], // Angry
-        "gray": [["E4","G4","B4"], ["G4","B5","D4"], ["C5","E5","G4"]] // Neutral
+        "yellow": [["F4","A4","C4"], ["G4","B#4","D4"]], // Happy
+        "green": [["G4","B4","D4"], ["F4","A4","C4"]], // Calm
+        "blue": [["E4","G4","B4"], ["A4","C4","E4"]], // Sad
+        "red": [["C4","E4","G4"], ["E4","G4","B4"]], // Angry
+        "gray": [ ["C4","E4","G4"], ["C4","E4","G4"]] // Neutral
     };
 
     songSoFar.push(s);
 
     // Select the first chord based on sentiment color
-    let chordOf3Notes = musicalSentiments[s]?.[0] || ["C", "E", "G"];
     let chordChange = musicalSentiments[s];
     return chordChange;
 }
